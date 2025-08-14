@@ -106,12 +106,12 @@ const Contact = () => {
               
               <div className="contact-item">
                 <h3>📞 Phone</h3>
-                <p>(555) 123-4567</p>
+                <p>(+977) 980000000</p>
               </div>
               
               <div className="contact-item">
                 <h3>📍 Address</h3>
-                <p>123 Library Street<br />City, State 12345</p>
+                <p>Bhadrapur Road<br />Jhapa, Nepal.</p>
               </div>
               
               <div className="contact-item">

@@ -139,9 +139,9 @@ const About = () => {
             </p>
             <div className="contact-info">
               <p><strong>Email:</strong> library@example.com</p>
-              <p><strong>Phone:</strong> (555) 123-4567</p>
+              <p><strong>Phone:</strong> (+977) 980000000</p>
               <p><strong>Hours:</strong> Monday - Friday: 9:00 AM - 8:00 PM</p>
-              <p><strong>Address:</strong> 123 Library Street, City, State 12345</p>
+              <p><strong>Address:</strong> 123 Bhadrapur Road,Jhapa,Nepal.</p>
             </div>
           </section>
         </div>
