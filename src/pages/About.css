@@ -1,0 +1,303 @@
+.about-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.about-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.about-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 60px 40px;
+  text-align: center;
+}
+
+.about-header h1 {
+  font-size: 3rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.about-header p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.about-sections {
+  padding: 40px;
+}
+
+.about-section {
+  margin-bottom: 50px;
+}
+
+.about-section:last-child {
+  margin-bottom: 0;
+}
+
+.about-section h2 {
+  color: #2c3e50;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e1e8ed;
+}
+
+.about-section p {
+  color: #555;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.about-section ul {
+  color: #555;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-left: 20px;
+}
+
+.about-section li {
+  margin-bottom: 8px;
+}
+
+/* Technology Stack */
+.tech-stack {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.tech-category {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 25px;
+  border: 1px solid #e1e8ed;
+}
+
+.tech-category h3 {
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.tech-category ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tech-category li {
+  color: #555;
+  font-size: 1rem;
+  padding: 8px 0;
+  border-bottom: 1px solid #e1e8ed;
+  margin-bottom: 0;
+}
+
+.tech-category li:last-child {
+  border-bottom: none;
+}
+
+/* Features Grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.feature {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 25px;
+  text-align: center;
+  border: 1px solid #e1e8ed;
+  transition: all 0.3s ease;
+}
+
+.feature:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.feature h3 {
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.feature p {
+  color: #7f8c8d;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Contact Information */
+.contact-info {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 25px;
+  margin-top: 20px;
+}
+
+.contact-info p {
+  color: #555;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contact-info strong {
+  color: #2c3e50;
+  font-weight: 600;
+  min-width: 100px;
+}
+
+.about-footer {
+  background: #f8f9fa;
+  padding: 40px;
+  text-align: center;
+  border-top: 1px solid #e1e8ed;
+}
+
+.about-footer p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .about-container {
+    padding: 15px;
+  }
+
+  .about-header {
+    padding: 40px 20px;
+  }
+
+  .about-header h1 {
+    font-size: 2.5rem;
+  }
+
+  .about-header p {
+    font-size: 1.1rem;
+  }
+
+  .about-sections {
+    padding: 30px 20px;
+  }
+
+  .about-section h2 {
+    font-size: 1.8rem;
+  }
+
+  .about-section p,
+  .about-section ul {
+    font-size: 1rem;
+  }
+
+  .tech-stack {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .tech-category,
+  .feature {
+    padding: 20px;
+  }
+
+  .contact-info {
+    padding: 20px;
+  }
+
+  .contact-info p {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .contact-info strong {
+    min-width: auto;
+  }
+
+  .about-footer {
+    padding: 30px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-container {
+    padding: 10px;
+  }
+
+  .about-header {
+    padding: 30px 15px;
+  }
+
+  .about-header h1 {
+    font-size: 2rem;
+  }
+
+  .about-header p {
+    font-size: 1rem;
+  }
+
+  .about-sections {
+    padding: 20px 15px;
+  }
+
+  .about-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .about-section {
+    margin-bottom: 40px;
+  }
+
+  .tech-category,
+  .feature {
+    padding: 15px;
+  }
+
+  .tech-category h3,
+  .feature h3 {
+    font-size: 1.2rem;
+  }
+
+  .contact-info {
+    padding: 15px;
+  }
+
+  .about-footer {
+    padding: 20px 15px;
+  }
+
+  .about-footer p {
+    font-size: 1rem;
+  }
+}
