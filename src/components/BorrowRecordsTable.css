@@ -1,0 +1,244 @@
+.borrow-records-container {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.borrow-records-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.borrow-records-table th {
+  background: #f8f9fa;
+  color: #2c3e50;
+  font-weight: 600;
+  text-align: left;
+  padding: 16px 12px;
+  border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
+}
+
+.borrow-records-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+.borrow-records-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.overdue-row {
+  background: #fff5f5;
+  border-left: 4px solid #e74c3c;
+}
+
+.overdue-row:hover {
+  background: #fef2f2;
+}
+
+.borrower-name {
+  min-width: 180px;
+}
+
+.user-name {
+  display: block;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.user-email {
+  display: block;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+.book-title {
+  min-width: 200px;
+}
+
+.book-title .title {
+  display: block;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.book-title .author {
+  display: block;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.borrow-date,
+.due-date,
+.return-date {
+  min-width: 100px;
+  text-align: center;
+}
+
+.due-date .overdue {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.overdue-badge {
+  display: block;
+  font-size: 0.75rem;
+  color: #e74c3c;
+  background: #fdf2f2;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.status-cell {
+  min-width: 120px;
+  text-align: center;
+}
+
+.status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status.borrowed {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status.returned {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.status.overdue {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.overdue-indicator {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.actions-cell {
+  min-width: 150px;
+  text-align: center;
+}
+
+.mark-returned-btn {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mark-returned-btn:hover {
+  background: #229954;
+  transform: translateY(-1px);
+}
+
+.returned-status {
+  color: #27ae60;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.no-records-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #7f8c8d;
+}
+
+.no-records-message p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+  .borrow-records-table {
+    font-size: 0.8rem;
+  }
+  
+  .borrow-records-table th,
+  .borrow-records-table td {
+    padding: 12px 8px;
+  }
+  
+  .borrower-name,
+  .book-title {
+    min-width: 140px;
+  }
+  
+  .borrow-date,
+  .due-date,
+  .return-date {
+    min-width: 80px;
+  }
+  
+  .status-cell {
+    min-width: 100px;
+  }
+  
+  .actions-cell {
+    min-width: 120px;
+  }
+  
+  .mark-returned-btn {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+  
+  .overdue-badge {
+    font-size: 0.7rem;
+    padding: 1px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .borrow-records-table th,
+  .borrow-records-table td {
+    padding: 8px 6px;
+  }
+  
+  .user-name,
+  .book-title .title {
+    font-size: 0.9rem;
+  }
+  
+  .user-email,
+  .book-title .author {
+    font-size: 0.75rem;
+  }
+  
+  .status {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+  
+  .overdue-badge {
+    font-size: 0.65rem;
+  }
+}

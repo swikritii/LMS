@@ -1,155 +1,180 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import './LibrarianDashboard.css';
 
 const LibrarianDashboard = () => {
+  const { user, token } = useAuth();
   const [books, setBooks] = useState([]);
   const [borrowRecords, setBorrowRecords] = useState([]);
-  const [overdueBooks, setOverdueBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('books');
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('');
   const [showAddBookForm, setShowAddBookForm] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('title');
+  const [message, setMessage] = useState({ text: '', type: '' });
 
-  const { user } = useAuth();
-
-  // Form state for adding/editing books
+  // Book form state
   const [bookForm, setBookForm] = useState({
     title: '',
     author: '',
     isbn: '',
     quantity: '',
-    available: '',
-    description: '',
     genre: '',
-    publishedYear: ''
+    publishedYear: '',
+    description: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  // Fetch books from API
+  const fetchBooks = useCallback(async () => {
+    console.log('Fetching books...');
     try {
-      setLoading(true);
-      await Promise.all([
-        fetchBooks(),
-        fetchBorrowRecords(),
-        fetchOverdueBooks()
-      ]);
+      const response = await axios.get('/api/books', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const payload = response?.data;
+      const booksArray = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.books)
+          ? payload.books
+          : [];
+      console.log('Books fetched successfully:', booksArray.length, 'books');
+      setBooks(booksArray);
+    } catch (error) {
+      console.error('Error fetching books:', error);
+      setMessage({ text: 'Failed to fetch books', type: 'error' });
+      // Do not rethrow to avoid blocking other loads
+    }
+  }, [token]);
+
+  // Fetch borrow records from API
+  const fetchBorrowRecords = useCallback(async () => {
+    console.log('Fetching borrow records...');
+    try {
+      // Attempt librarian endpoint first
+      const response = await axios.get('/api/borrow/all', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const payload = response?.data;
+      const records = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.borrows)
+          ? payload.borrows
+          : Array.isArray(payload?.records)
+            ? payload.records
+            : [];
+      console.log('Borrow records fetched successfully:', records.length, 'records');
+      setBorrowRecords(records);
+    } catch (error) {
+      console.warn('Borrow records fetch via /all failed, trying /my-books...', error?.response?.status);
+      try {
+        const fallback = await axios.get('/api/borrow/my-books', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const payload = fallback?.data;
+        const records = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.borrows)
+            ? payload.borrows
+            : [];
+        setBorrowRecords(records);
+      } catch (innerError) {
+        console.error('Error fetching borrow records:', innerError);
+        setBorrowRecords([]);
+        setMessage({ text: 'Failed to fetch borrow records', type: 'error' });
+      }
+    }
+  }, [token]);
+
+  // Fetch all data
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchBooks(), fetchBorrowRecords()]);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setMessage({ text: 'Failed to fetch data', type: 'error' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchBooks, fetchBorrowRecords]);
 
-  const fetchBooks = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/books', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setBooks(response.data.books);
-    } catch (error) {
-      console.error('Error fetching books:', error);
+  useEffect(() => {
+    console.log('useEffect triggered, token:', token ? 'exists' : 'missing');
+    if (token) {
+      fetchData();
+    } else {
+      console.log('No token available, setting loading to false');
+      setLoading(false);
     }
+  }, [token, fetchData]);
+
+  // Filter and sort books
+  const getFilteredAndSortedBooks = () => {
+    const safeBooks = Array.isArray(books) ? books : [];
+    let filtered = safeBooks.filter(book =>
+      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'title':
+          return a.title.localeCompare(b.title);
+        case 'author':
+          return a.author.localeCompare(b.author);
+        case 'isbn':
+          return a.isbn.localeCompare(b.isbn);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
   };
 
-  const fetchBorrowRecords = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/borrow/all', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setBorrowRecords(response.data.borrows);
-    } catch (error) {
-      console.error('Error fetching borrow records:', error);
-    }
+  // Reset book form
+  const resetBookForm = () => {
+    setBookForm({
+      title: '',
+      author: '',
+      isbn: '',
+      quantity: '',
+      genre: '',
+      publishedYear: '',
+      description: ''
+    });
   };
 
-  const fetchOverdueBooks = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/borrow/overdue', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setOverdueBooks(response.data.overdueBooks);
-    } catch (error) {
-      console.error('Error fetching overdue books:', error);
-    }
-  };
-
-  const handleAddBook = async (e) => {
+  // Handle book form submission
+  const handleBookSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('/api/books', bookForm, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      showMessage('Book added successfully!', 'success');
+      if (editingBook) {
+        await axios.put(`/api/books/${editingBook._id}`, bookForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMessage({ text: 'Book updated successfully!', type: 'success' });
+      } else {
+        await axios.post('/api/books', bookForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMessage({ text: 'Book added successfully!', type: 'success' });
+      }
+
       setShowAddBookForm(false);
-      resetBookForm();
-      fetchBooks();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error adding book';
-      showMessage(errorMessage, 'error');
-    }
-  };
-
-  const handleUpdateBook = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`/api/books/${editingBook._id}`, bookForm, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      showMessage('Book updated successfully!', 'success');
       setEditingBook(null);
       resetBookForm();
       fetchBooks();
+
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error updating book';
-      showMessage(errorMessage, 'error');
+      console.error('Error saving book:', error);
+      setMessage({ text: 'Failed to save book', type: 'error' });
     }
   };
 
-  const handleDeleteBook = async (bookId) => {
-    if (!window.confirm('Are you sure you want to delete this book?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/books/${bookId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      showMessage('Book deleted successfully!', 'success');
-      fetchBooks();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error deleting book';
-      showMessage(errorMessage, 'error');
-    }
-  };
-
+  // Handle edit book
   const handleEditBook = (book) => {
     setEditingBook(book);
     setBookForm({
@@ -157,28 +182,47 @@ const LibrarianDashboard = () => {
       author: book.author,
       isbn: book.isbn,
       quantity: book.quantity.toString(),
-      available: book.available.toString(),
-      description: book.description || '',
       genre: book.genre || '',
-      publishedYear: book.publishedYear ? book.publishedYear.toString() : ''
+      publishedYear: book.publishedYear || '',
+      description: book.description || ''
     });
     setShowAddBookForm(true);
   };
 
-  const resetBookForm = () => {
-    setBookForm({
-      title: '',
-      author: '',
-      isbn: '',
-      quantity: '',
-      available: '',
-      description: '',
-      genre: '',
-      publishedYear: ''
-    });
+  // Handle delete book
+  const handleDeleteBook = async (bookId) => {
+    if (window.confirm('Are you sure you want to delete this book?')) {
+      try {
+        await axios.delete(`/api/books/${bookId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMessage({ text: 'Book deleted successfully!', type: 'success' });
+        fetchBooks();
+        setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+      } catch (error) {
+        console.error('Error deleting book:', error);
+        setMessage({ text: 'Failed to delete book', type: 'error' });
+      }
+    }
   };
 
-  const handleFormChange = (e) => {
+  // Handle mark as returned
+  const handleMarkReturned = async (borrowId) => {
+    try {
+      await axios.post('/api/borrow/return', { borrowId }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessage({ text: 'Book marked as returned!', type: 'success' });
+      fetchBorrowRecords();
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+    } catch (error) {
+      console.error('Error marking book as returned:', error);
+      setMessage({ text: 'Failed to mark book as returned', type: 'error' });
+    }
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setBookForm(prev => ({
       ...prev,
@@ -186,71 +230,56 @@ const LibrarianDashboard = () => {
     }));
   };
 
-  const showMessage = (text, type) => {
-    setMessage(text);
-    setMessageType(type);
-    setTimeout(() => {
-      setMessage('');
-      setMessageType('');
-    }, 3000);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
   if (loading) {
     return (
       <div className="dashboard-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading dashboard...</p>
-        </div>
+        <div className="loading-spinner">Loading...</div>
       </div>
     );
   }
+
+  const filteredBooks = getFilteredAndSortedBooks();
 
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1>Librarian Dashboard</h1>
-        <p>Welcome, {user?.name}! Manage your library collection and monitor borrowings.</p>
+        <p>Welcome back, {user?.name}!</p>
       </div>
 
-      {message && (
-        <div className={`message ${messageType}`}>
-          {message}
+      {message.text && (
+        <div className={`message ${message.type}`}>
+          {message.text}
         </div>
       )}
 
-      {/* Tab Navigation */}
-      <div className="tab-navigation">
-        <button 
-          className={`tab-btn ${activeTab === 'books' ? 'active' : ''}`}
-          onClick={() => setActiveTab('books')}
-        >
-          Books ({books.length})
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'borrowings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('borrowings')}
-        >
-          Borrow Records ({borrowRecords.length})
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'overdue' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overdue')}
-        >
-          Overdue ({overdueBooks.length})
-        </button>
-      </div>
-
-      {/* Books Tab */}
-      {activeTab === 'books' && (
-        <div className="tab-content">
-          <div className="section-header">
-            <h2>Book Management</h2>
-            <button 
+      {/* Manage Books Section */}
+      <div className="manage-books-section">
+        <div className="section-header">
+          <div className="section-title">
+            <h2>Manage Books</h2>
+            <span className="book-icon">📚</span>
+          </div>
+          <div className="section-controls">
+            <div className="search-sort-controls">
+              <input
+                type="text"
+                placeholder="Search books by title or author..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="sort-select"
+              >
+                <option value="title">Sort by Title</option>
+                <option value="author">Sort by Author</option>
+                <option value="isbn">Sort by ISBN</option>
+              </select>
+            </div>
+            <button
               className="add-book-btn"
               onClick={() => {
                 setShowAddBookForm(true);
@@ -258,257 +287,223 @@ const LibrarianDashboard = () => {
                 resetBookForm();
               }}
             >
-              Add New Book
+              <span className="plus-icon">+</span> Add New Book
             </button>
           </div>
+        </div>
 
-          {/* Add/Edit Book Form */}
-          {showAddBookForm && (
-            <div className="book-form-overlay">
-              <div className="book-form-modal">
-                <div className="form-header">
-                  <h3>{editingBook ? 'Edit Book' : 'Add New Book'}</h3>
-                  <button 
-                    className="close-btn"
-                    onClick={() => {
-                      setShowAddBookForm(false);
-                      setEditingBook(null);
-                      resetBookForm();
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-                
-                <form onSubmit={editingBook ? handleUpdateBook : handleAddBook}>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Title *</label>
-                      <input
-                        type="text"
-                        name="title"
-                        value={bookForm.title}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Author *</label>
-                      <input
-                        type="text"
-                        name="author"
-                        value={bookForm.author}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>ISBN *</label>
-                      <input
-                        type="text"
-                        name="isbn"
-                        value={bookForm.isbn}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Genre</label>
-                      <input
-                        type="text"
-                        name="genre"
-                        value={bookForm.genre}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Total Quantity *</label>
-                      <input
-                        type="number"
-                        name="quantity"
-                        value={bookForm.quantity}
-                        onChange={handleFormChange}
-                        min="0"
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Available Quantity *</label>
-                      <input
-                        type="number"
-                        name="available"
-                        value={bookForm.available}
-                        onChange={handleFormChange}
-                        min="0"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Published Year</label>
-                      <input
-                        type="number"
-                        name="publishedYear"
-                        value={bookForm.publishedYear}
-                        onChange={handleFormChange}
-                        min="1800"
-                        max={new Date().getFullYear()}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Description</label>
-                    <textarea
-                      name="description"
-                      value={bookForm.description}
-                      onChange={handleFormChange}
-                      rows="3"
-                    />
-                  </div>
-
-                  <div className="form-actions">
-                    <button type="submit" className="save-btn">
-                      {editingBook ? 'Update Book' : 'Add Book'}
-                    </button>
-                    <button 
-                      type="button" 
-                      className="cancel-btn"
-                      onClick={() => {
-                        setShowAddBookForm(false);
-                        setEditingBook(null);
-                        resetBookForm();
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
+        {/* Book Cards Grid */}
+        <div className="books-grid">
+          {filteredBooks.map(book => (
+            <div key={book._id} className="book-card">
+              <div className="book-info">
+                <h3 className="book-title">{book.title}</h3>
+                <p className="book-author">by {book.author}</p>
+                <p className="book-isbn">{book.isbn}</p>
+                <p className="book-availability">
+                  Available: {book.available}/{book.quantity}
+                </p>
+              </div>
+              <div className="book-actions">
+                <button
+                  className="view-details-btn"
+                  onClick={() => window.open(`/book/${book._id}`, '_blank')}
+                >
+                  View Details
+                </button>
+                <button
+                  className="edit-btn"
+                  onClick={() => handleEditBook(book)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDeleteBook(book._id)}
+                >
+                  Delete
+                </button>
               </div>
             </div>
-          )}
+          ))}
+        </div>
+      </div>
 
-          {/* Books List */}
-          <div className="books-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Author</th>
-                  <th>ISBN</th>
-                  <th>Genre</th>
-                  <th>Available</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {books.map(book => (
-                  <tr key={book._id}>
-                    <td>{book.title}</td>
-                    <td>{book.author}</td>
-                    <td>{book.isbn}</td>
-                    <td>{book.genre || '-'}</td>
-                    <td>{book.available} / {book.quantity}</td>
-                    <td>
-                      <button 
-                        className="edit-btn"
-                        onClick={() => handleEditBook(book)}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        className="delete-btn"
-                        onClick={() => handleDeleteBook(book._id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Borrow Records Section */}
+      <div className="borrow-records-section">
+        <div className="section-header">
+          <div className="section-title">
+            <h2>Borrow Records</h2>
+            <span className="chart-icon">📊</span>
           </div>
         </div>
-      )}
 
-      {/* Borrow Records Tab */}
-      {activeTab === 'borrowings' && (
-        <div className="tab-content">
-          <h2>Borrow Records</h2>
-          <div className="borrow-records-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Book</th>
-                  <th>Borrow Date</th>
-                  <th>Due Date</th>
-                  <th>Return Date</th>
-                  <th>Status</th>
+        <div className="borrow-records-table">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Book</th>
+                <th>Borrow Date</th>
+                <th>Return Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {borrowRecords.map(record => (
+                <tr key={record._id}>
+                  <td>{record.user?.name || 'Unknown'}</td>
+                  <td>{record.book?.title || 'Unknown Book'}</td>
+                  <td>{new Date(record.borrowDate).toLocaleDateString()}</td>
+                  <td>
+                    {record.returnDate
+                      ? new Date(record.returnDate).toLocaleDateString()
+                      : 'Not returned'
+                    }
+                  </td>
+                  <td>
+                    <span className={`status-badge ${record.status}`}>
+                      {record.status}
+                    </span>
+                  </td>
+                  <td>
+                    {!record.returnDate && (
+                      <button
+                        className="mark-returned-btn"
+                        onClick={() => handleMarkReturned(record._id)}
+                      >
+                        Mark as Returned
+                      </button>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {borrowRecords.map(record => (
-                  <tr key={record.id} className={record.isOverdue ? 'overdue' : ''}>
-                    <td>{record.user.name}</td>
-                    <td>{record.book.title}</td>
-                    <td>{formatDate(record.borrowDate)}</td>
-                    <td>{formatDate(record.dueDate)}</td>
-                    <td>{record.returnDate ? formatDate(record.returnDate) : '-'}</td>
-                    <td>
-                      <span className={`status ${record.status}`}>
-                        {record.status}
-                        {record.isOverdue && ' (Overdue)'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
-      {/* Overdue Books Tab */}
-      {activeTab === 'overdue' && (
-        <div className="tab-content">
-          <h2>Overdue Books</h2>
-          {overdueBooks.length === 0 ? (
-            <p className="no-overdue">No overdue books!</p>
-          ) : (
-            <div className="overdue-books-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Book</th>
-                    <th>Borrow Date</th>
-                    <th>Due Date</th>
-                    <th>Days Overdue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {overdueBooks.map(record => (
-                    <tr key={record.id} className="overdue">
-                      <td>{record.user.name}</td>
-                      <td>{record.book.title}</td>
-                      <td>{formatDate(record.borrowDate)}</td>
-                      <td>{formatDate(record.dueDate)}</td>
-                      <td>{record.daysOverdue} days</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Add/Edit Book Form Modal */}
+      {showAddBookForm && (
+        <div className="book-form-overlay">
+          <div className="book-form-modal">
+            <div className="modal-header">
+              <h3>{editingBook ? 'Edit Book' : 'Add New Book'}</h3>
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowAddBookForm(false);
+                  setEditingBook(null);
+                  resetBookForm();
+                }}
+              >
+                ×
+              </button>
             </div>
-          )}
+
+            <form onSubmit={handleBookSubmit} className="book-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="title">Title *</label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={bookForm.title}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="author">Author *</label>
+                  <input
+                    type="text"
+                    id="author"
+                    name="author"
+                    value={bookForm.author}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="isbn">ISBN *</label>
+                  <input
+                    type="text"
+                    id="isbn"
+                    name="isbn"
+                    value={bookForm.isbn}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="quantity">Quantity *</label>
+                  <input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    value={bookForm.quantity}
+                    onChange={handleInputChange}
+                    min="1"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="genre">Genre</label>
+                  <input
+                    type="text"
+                    id="genre"
+                    name="genre"
+                    value={bookForm.genre}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="publishedYear">Published Year</label>
+                  <input
+                    type="number"
+                    id="publishedYear"
+                    name="publishedYear"
+                    value={bookForm.publishedYear}
+                    onChange={handleInputChange}
+                    min="1800"
+                    max={new Date().getFullYear()}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">Description</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={bookForm.description}
+                  onChange={handleInputChange}
+                  rows="3"
+                />
+              </div>
+
+              <div className="form-actions">
+                <button type="button" className="cancel-btn" onClick={() => {
+                  setShowAddBookForm(false);
+                  setEditingBook(null);
+                  resetBookForm();
+                }}>
+                  Cancel
+                </button>
+                <button type="submit" className="save-btn">
+                  {editingBook ? 'Update Book' : 'Add Book'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

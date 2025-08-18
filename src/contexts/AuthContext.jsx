@@ -123,6 +123,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     error,
+    token: localStorage.getItem('token'),
     register,
     login,
     logout,
